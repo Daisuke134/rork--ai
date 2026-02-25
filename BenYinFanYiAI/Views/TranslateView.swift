@@ -10,6 +10,7 @@ struct TranslateView: View {
     @State private var showResult = false
     @State private var showPaywall = false
     @State private var animateGradient = false
+    @State private var showError = false
     @FocusState private var isInputFocused: Bool
 
     var body: some View {
@@ -36,6 +37,11 @@ struct TranslateView: View {
             }
             .sheet(isPresented: $showPaywall) {
                 PaywallView()
+            }
+            .alert("エラー", isPresented: $showError) {
+                Button("OK") { aiService.errorMessage = nil }
+            } message: {
+                Text(aiService.errorMessage ?? "不明なエラーが発生しました")
             }
         }
     }
@@ -225,6 +231,8 @@ struct TranslateView: View {
             subscriptionService.consumeFreeUse()
             historyService.addResult(translationResult)
             showResult = true
+        } else if aiService.errorMessage != nil {
+            showError = true
         }
     }
 }

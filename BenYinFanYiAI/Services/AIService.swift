@@ -47,8 +47,8 @@ class AIService {
         let userMessage = "以下のメッセージを分析してください：\n\n\(text)"
 
         do {
-            guard let url = URL(string: "\(baseURL)/agent/chat") else {
-                errorMessage = "接続エラーが発生しました"
+            guard !baseURL.isEmpty, let url = URL(string: "\(baseURL)/agent/chat") else {
+                errorMessage = "AIサービスに接続できません。設定を確認してください。"
                 return nil
             }
 
@@ -66,9 +66,13 @@ class AIService {
 
             let (data, response) = try await URLSession.shared.data(for: request)
 
-            guard let httpResponse = response as? HTTPURLResponse,
-                  (200...299).contains(httpResponse.statusCode) else {
+            guard let httpResponse = response as? HTTPURLResponse else {
                 errorMessage = "サーバーエラーが発生しました。もう一度お試しください。"
+                return nil
+            }
+
+            guard (200...299).contains(httpResponse.statusCode) else {
+                errorMessage = "サーバーエラー(\(httpResponse.statusCode))が発生しました。もう一度お試しください。"
                 return nil
             }
 
