@@ -9,7 +9,32 @@ nonisolated struct AIResponse: Codable, Sendable {
 
 nonisolated struct ChatMessage: Codable, Sendable {
     let role: String
-    let content: String
+    let content: ChatMessageContent
+}
+
+nonisolated enum ChatMessageContent: Codable, Sendable {
+    case text(String)
+    case parts([[String: String]])
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .text(let string):
+            try container.encode(string)
+        case .parts(let parts):
+            try container.encode(parts)
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        if let string = try? container.decode(String.self) {
+            self = .text(string)
+        } else {
+            let parts = try container.decode([[String: String]].self)
+            self = .parts(parts)
+        }
+    }
 }
 
 nonisolated struct ChatRequest: Codable, Sendable {
@@ -58,8 +83,8 @@ class AIService {
             request.timeoutInterval = 60
 
             let body = ChatRequest(messages: [
-                ChatMessage(role: "system", content: systemPrompt),
-                ChatMessage(role: "user", content: userMessage)
+                ChatMessage(role: "system", content: .text(systemPrompt)),
+                ChatMessage(role: "user", content: .text(userMessage))
             ])
 
             request.httpBody = try JSONEncoder().encode(body)
@@ -71,12 +96,13 @@ class AIService {
                 return nil
             }
 
+            let responseText = String(data: data, encoding: .utf8) ?? ""
+
             guard (200...299).contains(httpResponse.statusCode) else {
+                print("[AIService] HTTP \(httpResponse.statusCode): \(responseText)")
                 errorMessage = "サーバーエラー(\(httpResponse.statusCode))が発生しました。もう一度お試しください。"
                 return nil
             }
-
-            let responseText = String(data: data, encoding: .utf8) ?? ""
 
             let extractedText = parseDataStreamResponse(responseText)
 
@@ -98,6 +124,7 @@ class AIService {
                 emotionLevel: min(5, max(1, aiResponse.emotionLevel))
             )
         } catch {
+            print("[AIService] Error: \(error)")
             errorMessage = "分析中にエラーが発生しました。もう一度お試しください。"
             return nil
         }
