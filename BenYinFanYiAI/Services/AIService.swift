@@ -13,9 +13,7 @@ class AIService {
     var isAnalyzing = false
     var errorMessage: String?
 
-    private let toolkitURL: String = {
-        ProcessInfo.processInfo.environment["EXPO_PUBLIC_TOOLKIT_URL"] ?? ""
-    }()
+    private let toolkitURL: String = Config.EXPO_PUBLIC_TOOLKIT_URL
 
     func analyzeMessage(_ text: String, relationship: RelationshipType) async -> TranslationResult? {
         isAnalyzing = true
