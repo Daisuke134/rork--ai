@@ -74,7 +74,9 @@ class AIService {
 
             let responseText = String(data: data, encoding: .utf8) ?? ""
 
-            let jsonString = extractJSON(from: responseText)
+            let extractedText = parseDataStreamResponse(responseText)
+
+            let jsonString = extractJSON(from: extractedText)
 
             guard let jsonData = jsonString.data(using: .utf8) else {
                 errorMessage = "応答の解析に失敗しました"
@@ -95,6 +97,24 @@ class AIService {
             errorMessage = "分析中にエラーが発生しました。もう一度お試しください。"
             return nil
         }
+    }
+
+    private func parseDataStreamResponse(_ raw: String) -> String {
+        var result = ""
+        let lines = raw.components(separatedBy: "\n")
+        for line in lines {
+            if line.hasPrefix("0:") {
+                let jsonPart = String(line.dropFirst(2))
+                if let data = jsonPart.data(using: .utf8),
+                   let text = try? JSONDecoder().decode(String.self, from: data) {
+                    result += text
+                }
+            }
+        }
+        if result.isEmpty {
+            return raw
+        }
+        return result
     }
 
     private func extractJSON(from text: String) -> String {

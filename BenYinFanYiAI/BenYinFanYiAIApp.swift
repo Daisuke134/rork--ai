@@ -6,6 +6,7 @@ struct BenYinFanYiAIApp: App {
     @State private var aiService = AIService()
     @State private var subscriptionService = SubscriptionService()
     @State private var historyService = HistoryService()
+    @State private var hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
 
     init() {
         #if DEBUG
@@ -18,13 +19,24 @@ struct BenYinFanYiAIApp: App {
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(aiService)
+            if hasCompletedOnboarding {
+                ContentView()
+                    .environment(aiService)
+                    .environment(subscriptionService)
+                    .environment(historyService)
+                    .task {
+                        await subscriptionService.checkSubscriptionStatus()
+                    }
+            } else {
+                OnboardingView {
+                    UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+                    hasCompletedOnboarding = true
+                }
                 .environment(subscriptionService)
-                .environment(historyService)
                 .task {
                     await subscriptionService.checkSubscriptionStatus()
                 }
+            }
         }
     }
 }
