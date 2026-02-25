@@ -1,28 +1,11 @@
-//
-//  BenYinFanYiAIApp.swift
-//  BenYinFanYiAI
-//
-//  Created by Rork on February 25, 2026.
-//
-
 import SwiftUI
-import SwiftData
 import RevenueCat
 
 @main
 struct BenYinFanYiAIApp: App {
-    var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Item.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
-
-        do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
-        } catch {
-            fatalError("Could not create ModelContainer: \(error)")
-        }
-    }()
+    @State private var aiService = AIService()
+    @State private var subscriptionService = SubscriptionService()
+    @State private var historyService = HistoryService()
 
     init() {
         #if DEBUG
@@ -36,7 +19,12 @@ struct BenYinFanYiAIApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(aiService)
+                .environment(subscriptionService)
+                .environment(historyService)
+                .task {
+                    await subscriptionService.checkSubscriptionStatus()
+                }
         }
-        .modelContainer(sharedModelContainer)
     }
 }
