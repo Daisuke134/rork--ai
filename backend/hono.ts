@@ -1,21 +1,25 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { generateObject } from "@rork-ai/toolkit-sdk";
-import { z } from "zod";
 
 const app = new Hono();
 
 app.use("*", cors());
 
+const TOOLKIT_URL = process.env["EXPO_PUBLIC_TOOLKIT_URL"] ?? "https://toolkit.rork.com";
+
+const aiResponseJsonSchema = {
+  type: "object",
+  properties: {
+    honne: { type: "string" },
+    psychologicalState: { type: "string" },
+    suggestedResponse: { type: "string" },
+    emotionLevel: { type: "number", minimum: 1, maximum: 5 },
+  },
+  required: ["honne", "psychologicalState", "suggestedResponse", "emotionLevel"],
+};
+
 app.get("/", (c) => {
   return c.json({ status: "ok", message: "API is running" });
-});
-
-const AIResponseSchema = z.object({
-  honne: z.string(),
-  psychologicalState: z.string(),
-  suggestedResponse: z.string(),
-  emotionLevel: z.number().min(1).max(5),
 });
 
 app.post("/translate", async (c) => {
@@ -27,29 +31,35 @@ app.post("/translate", async (c) => {
       return c.json({ error: "text and relationship are required" }, 400);
     }
 
-    const systemPrompt = `あなたは人間関係の専門家であり、心理カウンセラーです。
-ユーザーが送ってきたメッセージや会話文を分析し、以下の形式でJSON形式で回答してください。
+    const prompt = `あなたは人間関係の専門家であり、心理カウンセラーです。
+ユーザーが送ってきたメッセージや会話文を分析し、JSON形式で回答してください。
 
 関係性: ${relationship}
 
-必ず以下のJSON形式で回答してください。他のテキストは一切含めないでください：
-{
-    "honne": "相手の本音（本当に言いたいこと、隠された感情）を詳しく説明",
-    "psychologicalState": "相手の心理状態を詳しく分析（不安、怒り、寂しさ、期待など）",
-    "suggestedResponse": "この状況で最適な返答の例を具体的に提案",
-    "emotionLevel": 1〜5の数字（1=穏やか、5=非常に感情的）
-}`;
+以下のメッセージを分析してください：
 
-    const userMessage = `以下のメッセージを分析してください：\n\n${text}`;
+${text}`;
 
-    const result = await generateObject({
-      messages: [
-        { role: "user" as const, content: `${systemPrompt}\n\n${userMessage}` },
-      ],
-      schema: AIResponseSchema,
+    const response = await fetch(new URL("/llm/object", TOOLKIT_URL).toString(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        messages: [
+          { role: "user", content: prompt },
+        ],
+        schema: aiResponseJsonSchema,
+      }),
     });
 
-    return c.json({ success: true, data: result });
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("[translate] Toolkit error:", response.status, errorText);
+      return c.json({ error: "AI analysis failed" }, 500);
+    }
+
+    const data = await response.json();
+
+    return c.json({ success: true, data: data.object });
   } catch (error: any) {
     console.error("[translate] Error:", error);
     return c.json({ error: error.message || "AI analysis failed" }, 500);
@@ -57,3 +67,4 @@ app.post("/translate", async (c) => {
 });
 
 export default app;
+

@@ -1,9 +1,7 @@
 import Foundation
 
-nonisolated struct AIBackendResponse: Codable, Sendable {
-    let success: Bool
-    let data: AIResponseData?
-    let error: String?
+nonisolated struct ToolkitObjectResponse: Codable, Sendable {
+    let object: AIResponseData
 }
 
 nonisolated struct AIResponseData: Codable, Sendable {
@@ -19,7 +17,7 @@ class AIService {
     var isAnalyzing = false
     var errorMessage: String?
 
-    private let apiBaseURL: String = Config.EXPO_PUBLIC_RORK_API_BASE_URL
+    private let toolkitURL: String = Config.EXPO_PUBLIC_TOOLKIT_URL
 
     func analyzeMessage(_ text: String, relationship: RelationshipType) async -> TranslationResult? {
         isAnalyzing = true
@@ -27,32 +25,55 @@ class AIService {
         defer { isAnalyzing = false }
 
         do {
-            guard !apiBaseURL.isEmpty else {
-                errorMessage = "APIのURLが設定されていません。"
+            guard !toolkitURL.isEmpty else {
+                errorMessage = "AIサービスのURLが設定されていません。"
                 return nil
             }
 
-            guard let url = URL(string: "\(apiBaseURL)/api/translate") else {
-                errorMessage = "APIに接続できません。"
+            guard let url = URL(string: "\(toolkitURL)/llm/object") else {
+                errorMessage = "AIサービスに接続できません。"
                 return nil
             }
+
+            let prompt = """
+            あなたは人間関係の専門家であり、心理カウンセラーです。
+            ユーザーが送ってきたメッセージや会話文を分析し、JSON形式で回答してください。
+
+            関係性: \(relationship.displayName)
+
+            以下のメッセージを分析してください：
+
+            \(text)
+            """
+
+            let schema: [String: Any] = [
+                "type": "object",
+                "properties": [
+                    "honne": ["type": "string"],
+                    "psychologicalState": ["type": "string"],
+                    "suggestedResponse": ["type": "string"],
+                    "emotionLevel": ["type": "number", "minimum": 1, "maximum": 5]
+                ],
+                "required": ["honne", "psychologicalState", "suggestedResponse", "emotionLevel"]
+            ]
+
+            let requestBody: [String: Any] = [
+                "messages": [
+                    ["role": "user", "content": prompt]
+                ],
+                "schema": schema
+            ]
 
             var request = URLRequest(url: url)
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.timeoutInterval = 60
-
-            let body: [String: String] = [
-                "text": text,
-                "relationship": relationship.displayName
-            ]
-
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            request.httpBody = try JSONSerialization.data(withJSONObject: requestBody)
 
             let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
-                errorMessage = "サーバーからの応答が無効です。もう一度お試しください。"
+                errorMessage = "サーバーからの応答が無効です。"
                 return nil
             }
 
@@ -63,12 +84,8 @@ class AIService {
                 return nil
             }
 
-            let backendResponse = try JSONDecoder().decode(AIBackendResponse.self, from: data)
-
-            guard backendResponse.success, let aiData = backendResponse.data else {
-                errorMessage = backendResponse.error ?? "分析結果の取得に失敗しました。"
-                return nil
-            }
+            let toolkitResponse = try JSONDecoder().decode(ToolkitObjectResponse.self, from: data)
+            let aiData = toolkitResponse.object
 
             return TranslationResult(
                 originalText: text,
