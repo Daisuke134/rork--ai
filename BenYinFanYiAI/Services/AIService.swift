@@ -7,47 +7,15 @@ nonisolated struct AIResponse: Codable, Sendable {
     let emotionLevel: Int
 }
 
-nonisolated struct ChatMessage: Codable, Sendable {
-    let role: String
-    let content: ChatMessageContent
-}
-
-nonisolated enum ChatMessageContent: Codable, Sendable {
-    case text(String)
-    case parts([[String: String]])
-
-    func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        switch self {
-        case .text(let string):
-            try container.encode(string)
-        case .parts(let parts):
-            try container.encode(parts)
-        }
-    }
-
-    init(from decoder: Decoder) throws {
-        let container = try decoder.singleValueContainer()
-        if let string = try? container.decode(String.self) {
-            self = .text(string)
-        } else {
-            let parts = try container.decode([[String: String]].self)
-            self = .parts(parts)
-        }
-    }
-}
-
-nonisolated struct ChatRequest: Codable, Sendable {
-    let messages: [ChatMessage]
-}
-
 @Observable
 @MainActor
 class AIService {
     var isAnalyzing = false
     var errorMessage: String?
 
-    private let baseURL: String = Config.EXPO_PUBLIC_TOOLKIT_URL
+    private let toolkitURL: String = {
+        ProcessInfo.processInfo.environment["EXPO_PUBLIC_TOOLKIT_URL"] ?? ""
+    }()
 
     func analyzeMessage(_ text: String, relationship: RelationshipType) async -> TranslationResult? {
         isAnalyzing = true
@@ -72,8 +40,13 @@ class AIService {
         let userMessage = "以下のメッセージを分析してください：\n\n\(text)"
 
         do {
-            guard !baseURL.isEmpty, let url = URL(string: "\(baseURL)/agent/chat") else {
-                errorMessage = "AIサービスに接続できません。設定を確認してください。"
+            guard !toolkitURL.isEmpty else {
+                errorMessage = "AIサービスのURLが設定されていません。"
+                return nil
+            }
+
+            guard let url = URL(string: "\(toolkitURL)/agent/chat") else {
+                errorMessage = "AIサービスに接続できません。"
                 return nil
             }
 
@@ -82,17 +55,19 @@ class AIService {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.timeoutInterval = 60
 
-            let body = ChatRequest(messages: [
-                ChatMessage(role: "system", content: .text(systemPrompt)),
-                ChatMessage(role: "user", content: .text(userMessage))
-            ])
+            let body: [String: Any] = [
+                "messages": [
+                    ["role": "system", "content": systemPrompt],
+                    ["role": "user", "content": userMessage]
+                ]
+            ]
 
-            request.httpBody = try JSONEncoder().encode(body)
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
 
             let (data, response) = try await URLSession.shared.data(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
-                errorMessage = "サーバーエラーが発生しました。もう一度お試しください。"
+                errorMessage = "サーバーからの応答が無効です。もう一度お試しください。"
                 return nil
             }
 
@@ -100,16 +75,19 @@ class AIService {
 
             guard (200...299).contains(httpResponse.statusCode) else {
                 print("[AIService] HTTP \(httpResponse.statusCode): \(responseText)")
-                errorMessage = "サーバーエラー(\(httpResponse.statusCode))が発生しました。もう一度お試しください。"
+                if httpResponse.statusCode == 500 {
+                    errorMessage = "AI分析サーバーでエラーが発生しました。しばらくしてからもう一度お試しください。"
+                } else {
+                    errorMessage = "サーバーエラー(\(httpResponse.statusCode))が発生しました。もう一度お試しください。"
+                }
                 return nil
             }
 
             let extractedText = parseDataStreamResponse(responseText)
-
             let jsonString = extractJSON(from: extractedText)
 
             guard let jsonData = jsonString.data(using: .utf8) else {
-                errorMessage = "応答の解析に失敗しました"
+                errorMessage = "応答の解析に失敗しました。もう一度お試しください。"
                 return nil
             }
 
@@ -134,10 +112,11 @@ class AIService {
         var result = ""
         let lines = raw.components(separatedBy: "\n")
         for line in lines {
-            if line.hasPrefix("0:") {
-                let jsonPart = String(line.dropFirst(2))
-                if let data = jsonPart.data(using: .utf8),
-                   let text = try? JSONDecoder().decode(String.self, from: data) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            if trimmed.hasPrefix("0:") {
+                let jsonPart = String(trimmed.dropFirst(2))
+                if let partData = jsonPart.data(using: .utf8),
+                   let text = try? JSONDecoder().decode(String.self, from: partData) {
                     result += text
                 }
             }
