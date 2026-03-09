@@ -5,7 +5,7 @@ struct SettingsView: View {
     @State private var showPaywall = false
 
     private var privacyPolicyURL: URL {
-        URL(string: "\(Config.EXPO_PUBLIC_RORK_API_BASE_URL)/api/privacy/ja") ?? URL(string: "https://apple.com")!
+        URL(string: "https://daisuke134.github.io/rork--ai/privacy-policy.html")!
     }
     private var termsURL: URL {
         URL(string: "\(Config.EXPO_PUBLIC_RORK_API_BASE_URL)/api/terms/ja") ?? URL(string: "https://apple.com")!
