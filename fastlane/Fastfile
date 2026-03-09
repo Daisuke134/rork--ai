@@ -1,0 +1,47 @@
+default_platform(:ios)
+
+platform :ios do
+  desc "Build and run on simulator"
+  lane :simulator do
+    build_app(
+      project: "BenYinFanYiAI.xcodeproj",
+      scheme: "BenYinFanYiAI",
+      destination: "platform=iOS Simulator,name=iPhone 17 Pro",
+      configuration: "Debug",
+      derived_data_path: "build",
+      skip_archive: true,
+      skip_codesigning: true,
+      buildlog_path: "build/logs"
+    )
+  end
+
+  desc "Build and upload to TestFlight"
+  lane :beta do
+    api_key = app_store_connect_api_key(
+      key_id: "646Y27MJ8C",
+      issuer_id: "f53272d9-c12d-4d9d-811c-4eb658284e74",
+      key_filepath: File.expand_path("~/.appstoreconnect/private_keys/AuthKey_646Y27MJ8C.p8")
+    )
+
+    increment_build_number(
+      build_number: Time.now.strftime("%Y%m%d%H%M"),
+      xcodeproj: "BenYinFanYiAI.xcodeproj"
+    )
+
+    build_app(
+      project: "BenYinFanYiAI.xcodeproj",
+      scheme: "BenYinFanYiAI",
+      configuration: "Release",
+      export_method: "app-store",
+      xcargs: "-allowProvisioningUpdates -authenticationKeyPath '#{File.expand_path("~/.appstoreconnect/private_keys/AuthKey_646Y27MJ8C.p8")}' -authenticationKeyID 646Y27MJ8C -authenticationKeyIssuerID f53272d9-c12d-4d9d-811c-4eb658284e74",
+      derived_data_path: "build",
+      output_directory: "build/ipa",
+      buildlog_path: "build/logs"
+    )
+
+    upload_to_testflight(
+      api_key: api_key,
+      skip_waiting_for_build_processing: true
+    )
+  end
+end
