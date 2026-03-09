@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct ContentView: View {
+
     var body: some View {
         TabView {
             Tab("翻訳", systemImage: "brain.head.profile.fill") {
