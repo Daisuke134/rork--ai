@@ -4,7 +4,7 @@ struct SettingsView: View {
     @Environment(SubscriptionService.self) private var subscriptionService
     @State private var showPaywall = false
 
-    private let privacyPolicyURL = URL(string: "https://aniccaai.com/honne/privacy/ja")!
+    private let privacyPolicyURL = URL(string: "https://daisuke134.github.io/rork--ai/privacy-policy.html")!
     private let termsURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
 
     var body: some View {
