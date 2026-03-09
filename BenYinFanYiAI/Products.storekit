@@ -1,0 +1,80 @@
+{
+  "identifier" : "8A3B7C2D",
+  "nonRenewingSubscriptions" : [ ],
+  "products" : [ ],
+  "settings" : {
+    "_applicationInternalID" : "1",
+    "_developerTeamID" : ""
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "F1E2D3C4",
+      "localizations" : [
+        {
+          "description" : "本音翻訳AIのプレミアム機能をアンロック",
+          "displayName" : "プレミアム",
+          "locale" : "ja"
+        }
+      ],
+      "name" : "Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [ ],
+          "codeOffers" : [ ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "A1B2C3D4",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "毎月自動更新のプレミアムプラン",
+              "displayName" : "月額プレミアム",
+              "locale" : "ja"
+            },
+            {
+              "description" : "Monthly auto-renewable premium plan",
+              "displayName" : "Premium Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "premium_monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Premium Monthly",
+          "subscriptionGroupID" : "F1E2D3C4",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [ ],
+          "codeOffers" : [ ],
+          "displayPrice" : "29.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "E5F6A7B8",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "毎年自動更新のプレミアムプラン",
+              "displayName" : "年額プレミアム",
+              "locale" : "ja"
+            },
+            {
+              "description" : "Yearly auto-renewable premium plan",
+              "displayName" : "Premium Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "premium_yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Premium Yearly",
+          "subscriptionGroupID" : "F1E2D3C4",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
