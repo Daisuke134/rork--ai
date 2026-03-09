@@ -11,7 +11,10 @@ struct TranslateView: View {
     @State private var showPaywall = false
     @State private var animateGradient = false
     @State private var showError = false
+    @State private var showDataConsentAlert = false
     @FocusState private var isInputFocused: Bool
+
+    private let hasAcceptedDataConsentKey = "hasAcceptedDataConsent"
 
     var body: some View {
         NavigationStack {
@@ -42,6 +45,15 @@ struct TranslateView: View {
                 Button("OK") { aiService.errorMessage = nil }
             } message: {
                 Text(aiService.errorMessage ?? "不明なエラーが発生しました")
+            }
+            .alert("データの取り扱いについて", isPresented: $showDataConsentAlert) {
+                Button("同意して利用する") {
+                    UserDefaults.standard.set(true, forKey: hasAcceptedDataConsentKey)
+                    Task { await performAnalysis() }
+                }
+                Button("キャンセル", role: .cancel) {}
+            } message: {
+                Text("入力されたメッセージはAI分析のためにOpenAI社のサーバーに送信されます。個人情報や機密情報の入力はお控えください。詳細はプライバシーポリシーをご確認ください。")
             }
         }
     }
@@ -224,6 +236,16 @@ struct TranslateView: View {
             return
         }
 
+        let hasConsented = UserDefaults.standard.bool(forKey: hasAcceptedDataConsentKey)
+        if !hasConsented {
+            showDataConsentAlert = true
+            return
+        }
+
+        await performAnalysis()
+    }
+
+    private func performAnalysis() async {
         isInputFocused = false
 
         if let translationResult = await aiService.analyzeMessage(inputText, relationship: selectedRelationship) {

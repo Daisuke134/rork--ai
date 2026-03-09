@@ -6,6 +6,9 @@ struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var appeared = false
 
+    private let privacyPolicyURL = URL(string: "https://sites.google.com/view/honne-ai-privacy")!
+    private let termsURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
+
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -99,6 +102,20 @@ struct PaywallView: View {
                         }
                     }
                 }
+            } else if subscriptionService.errorMessage != nil {
+                VStack(spacing: 12) {
+                    Image(systemName: "exclamationmark.triangle")
+                        .font(.title2)
+                        .foregroundStyle(.orange)
+                    Text("プランの読み込みに失敗しました")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Button("再試行") {
+                        Task { await subscriptionService.fetchOfferings() }
+                    }
+                    .font(.subheadline.weight(.semibold))
+                }
+                .padding(24)
             }
 
             if let error = subscriptionService.errorMessage {
@@ -123,13 +140,23 @@ struct PaywallView: View {
     }
 
     private var termsSection: some View {
-        VStack(spacing: 4) {
-            Text("サブスクリプションは自動更新されます")
+        VStack(spacing: 8) {
+            Text("サブスクリプションは自動更新されます。次の更新日の24時間前までにキャンセルしない限り、自動的に更新されます。購入の確認後、お支払いはApple IDアカウントに請求されます。")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
-            Text("いつでもキャンセル可能です")
-                .font(.caption2)
-                .foregroundStyle(.tertiary)
+                .multilineTextAlignment(.center)
+
+            HStack(spacing: 16) {
+                Link("利用規約", destination: termsURL)
+                    .font(.caption2)
+
+                Text("・")
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+
+                Link("プライバシーポリシー", destination: privacyPolicyURL)
+                    .font(.caption2)
+            }
         }
     }
 }
@@ -224,8 +251,8 @@ struct PackageCard: View {
 
     private var packageDescription: String {
         switch package.packageType {
-        case .monthly: return "いつでもキャンセル可能"
-        case .annual: return "月額換算で50%お得"
+        case .monthly: return "1ヶ月ごとの自動更新・いつでもキャンセル可能"
+        case .annual: return "1年ごとの自動更新・月額換算で50%お得"
         default: return ""
         }
     }

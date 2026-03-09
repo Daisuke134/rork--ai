@@ -4,10 +4,14 @@ struct SettingsView: View {
     @Environment(SubscriptionService.self) private var subscriptionService
     @State private var showPaywall = false
 
+    private let privacyPolicyURL = URL(string: "https://sites.google.com/view/honne-ai-privacy")!
+    private let termsURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
+
     var body: some View {
         NavigationStack {
             List {
                 subscriptionSection
+                dataSection
                 aboutSection
                 legalSection
             }
@@ -70,6 +74,31 @@ struct SettingsView: View {
         }
     }
 
+    private var dataSection: some View {
+        Section {
+            HStack(spacing: 12) {
+                Image(systemName: "info.circle")
+                    .foregroundStyle(.blue)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("データの取り扱い")
+                        .font(.subheadline)
+                    Text("入力されたメッセージはAI分析のためにOpenAI社のサーバーに送信されます。個人情報や機密情報の入力はお控えください。")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.vertical, 4)
+
+            Button {
+                UserDefaults.standard.set(false, forKey: "hasAcceptedDataConsent")
+            } label: {
+                Label("データ同意をリセット", systemImage: "arrow.counterclockwise")
+            }
+        } header: {
+            Text("プライバシー")
+        }
+    }
+
     private var aboutSection: some View {
         Section {
             HStack {
@@ -85,10 +114,10 @@ struct SettingsView: View {
 
     private var legalSection: some View {
         Section {
-            Link(destination: URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!) {
-                Label("利用規約", systemImage: "doc.text")
+            Link(destination: termsURL) {
+                Label("利用規約（EULA）", systemImage: "doc.text")
             }
-            Link(destination: URL(string: "https://www.apple.com/legal/privacy/")!) {
+            Link(destination: privacyPolicyURL) {
                 Label("プライバシーポリシー", systemImage: "hand.raised")
             }
         } header: {
