@@ -6,8 +6,12 @@ struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var appeared = false
 
-    private let privacyPolicyURL = URL(string: "https://daisuke134.github.io/rork--ai/privacy-policy.html")!
-    private let termsURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
+    private var privacyPolicyURL: URL {
+        URL(string: "\(Config.EXPO_PUBLIC_RORK_API_BASE_URL)/api/privacy/ja") ?? URL(string: "https://apple.com")!
+    }
+    private var termsURL: URL {
+        URL(string: "\(Config.EXPO_PUBLIC_RORK_API_BASE_URL)/api/terms/ja") ?? URL(string: "https://apple.com")!
+    }
 
     var body: some View {
         NavigationStack {
