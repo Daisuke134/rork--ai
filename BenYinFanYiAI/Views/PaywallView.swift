@@ -6,7 +6,7 @@ struct PaywallView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var appeared = false
 
-    private let privacyPolicyURL = URL(string: "https://sites.google.com/view/honne-ai-privacy")!
+    private let privacyPolicyURL = URL(string: "https://aniccaai.com/honne/privacy/ja")!
     private let termsURL = URL(string: "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/")!
 
     var body: some View {
