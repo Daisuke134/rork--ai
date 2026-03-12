@@ -33,7 +33,7 @@
               "locale" : "ja"
             }
           ],
-          "productID" : "com.daisuke.honne.premium.monthly",
+          "productID" : "app.honyaku-ai.premium.monthly",
           "recurringSubscriptionPeriod" : "P1M",
           "referenceName" : "Monthly Premium",
           "subscriptionGroupID" : "premium_group",
@@ -54,7 +54,7 @@
               "locale" : "ja"
             }
           ],
-          "productID" : "com.daisuke.honne.premium.yearly",
+          "productID" : "app.honyaku-ai.premium.yearly",
           "recurringSubscriptionPeriod" : "P1Y",
           "referenceName" : "Yearly Premium",
           "subscriptionGroupID" : "premium_group",
